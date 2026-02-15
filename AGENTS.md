@@ -66,6 +66,8 @@ For every new functionality enhancement, agents must:
 
 ### Action Plans History
 
+
+- **action-plan-json-exception-listener.md**: Plan para configurar Symfony para devolver errores en formato JSON en peticiones API. Documentado en `docs/action-plan-json-exception-listener.md`.
 - **plan-api-symfony.md**: Plan para crear una API ligera en PHP (Symfony) bajo `/api`, con endpoints para autenticación, gestión de usuarios y comidas, usando JWT y estructura mínima. Documentado en `docs/plan-api-symfony.md` y `plans/plan-api-symfony.md`.
 
 See `docs/action-plan.md` and `docs/plan-api-symfony.md` for the current standard action plans for refactoring, UI improvements, and API backend.
