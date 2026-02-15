@@ -2,5 +2,5 @@
 lexik_jwt_authentication:
     secret_key: '%kernel.project_dir%/config/jwt/private.pem'
     public_key: '%kernel.project_dir%/config/jwt/public.pem'
-    pass_phrase: 'ChangeMe'
+    pass_phrase: 'NuevaPassFraseSegura2026'
     token_ttl: 3600
