@@ -13,6 +13,7 @@ Creates a new meal for the authenticated user.
 - `calories` (integer, required): Calories in the meal
 - `date` (string, required, ISO 8601): Date of the meal
 - `notes` (string, optional): Notes about the meal
+- `meal_options` (array of int, optional): IDs of MealOption to assign to this meal
 
 ## Example Request
 ```
@@ -29,7 +30,7 @@ curl -X POST http://localhost:8000/api/meals \
 
 ## Success Response
 - **Code:** 201
-- **Content:** Meal object
+- **Content:** Meal object (see [List Meals](endpoint-meals-list.md) for structure)
 
 ## Error Response
 - **Code:** 400 Bad Request

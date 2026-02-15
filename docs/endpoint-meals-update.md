@@ -13,6 +13,7 @@ Updates a meal for the authenticated user.
 - `calories` (integer, optional): Calories in the meal
 - `date` (string, optional, ISO 8601): Date of the meal
 - `notes` (string, optional): Notes about the meal
+- `meal_options` (array of int, optional): IDs of MealOption to assign to this meal (replaces all previous options)
 
 ## Example Request
 ```
@@ -27,7 +28,7 @@ curl -X PUT http://localhost:8000/api/meals/1 \
 
 ## Success Response
 - **Code:** 200
-- **Content:** Updated meal object
+- **Content:** Updated meal object (see [List Meals](endpoint-meals-list.md) for structure)
 
 ## Error Response
 - **Code:** 400 Bad Request
