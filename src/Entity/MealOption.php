@@ -13,6 +13,20 @@ class MealOption
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
+    #[ORM\ManyToOne(targetEntity: MealTime::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?MealTime $mealTime = null;
+
+    public function getMealTime(): ?MealTime
+    {
+        return $this->mealTime;
+    }
+    public function setMealTime(?MealTime $mealTime): self
+    {
+        $this->mealTime = $mealTime;
+        return $this;
+    }
+
 
 
     #[ORM\Column(type: 'string', length: 100)]

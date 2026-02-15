@@ -9,10 +9,28 @@ use Symfony\Component\Routing\Attribute\Route;
 final class MealOptionController extends AbstractController
 {
     #[Route('/api/meal-options', name: 'api_meal_options_list', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(\Doctrine\ORM\EntityManagerInterface $em): JsonResponse
     {
-        // TODO: Implement list meal options for authenticated user
-        return $this->json(['message' => 'List meal options endpoint']);
+        $repo = $em->getRepository(\App\Entity\MealOption::class);
+        $options = $repo->createQueryBuilder('o')
+            ->leftJoin('o.mealTime', 't')
+            ->addSelect('t')
+            ->getQuery()->getResult();
+
+        $data = array_map(function($option) {
+            return [
+                'id' => $option->getId(),
+                'name' => $option->getName(),
+                'description' => $option->getDescription(),
+                'meal_time' => $option->getMealTime() ? [
+                    'id' => $option->getMealTime()->getId(),
+                    'name' => $option->getMealTime()->getName(),
+                    'label' => $option->getMealTime()->getLabel(),
+                ] : null,
+            ];
+        }, $options);
+
+        return $this->json($data);
     }
 
     #[Route('/api/meal-options', name: 'api_meal_options_create', methods: ['POST'])]
