@@ -64,13 +64,14 @@ For every new functionality enhancement, agents must:
 - Follow modular, reusable, and testable code practices.
 - Include QA guidelines for each improvement.
 
-### Action Plans History
 
+### Action Plans History
 
 - **action-plan-json-exception-listener.md**: Plan para configurar Symfony para devolver errores en formato JSON en peticiones API. Documentado en `docs/action-plan-json-exception-listener.md`.
 - **plan-api-symfony.md**: Plan para crear una API ligera en PHP (Symfony) bajo `/api`, con endpoints para autenticación, gestión de usuarios y comidas, usando JWT y estructura mínima. Documentado en `docs/plan-api-symfony.md` y `plans/plan-api-symfony.md`.
+- **action-plan-openai-shopping-list.md**: Plan para integrar OpenAI y generar una lista de la compra dinámica basada en el menú del usuario y el rango de fechas. Documentado en `docs/action-plan-openai-shopping-list.md` y endpoint en `docs/endpoint-shopping-list.md`.
 
-See `docs/action-plan.md` and `docs/plan-api-symfony.md` for the current standard action plans for refactoring, UI improvements, and API backend.
+See `docs/action-plan.md`, `docs/plan-api-symfony.md`, and `docs/action-plan-openai-shopping-list.md` for the current standard action plans for refactoring, UI improvements, and API backend.
 
 ---
 

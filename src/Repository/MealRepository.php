@@ -9,6 +9,8 @@ use Doctrine\Persistence\ManagerRegistry;
 /**
  * @extends ServiceEntityRepository<Meal>
  */
+use App\Entity\User;
+
 class MealRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -40,4 +42,25 @@ class MealRepository extends ServiceEntityRepository
 //            ->getOneOrNullResult()
 //        ;
 //    }
+
+    /**
+     * Find meals for a user within a date range (inclusive)
+     *
+     * @param User $user
+     * @param string $startDate (YYYY-MM-DD)
+     * @param string $endDate (YYYY-MM-DD)
+     * @return Meal[]
+     */
+    public function findByUserAndDateRange(User $user, string $startDate, string $endDate): array
+    {
+        $qb = $this->createQueryBuilder('m')
+            ->andWhere('m.user = :user')
+            ->andWhere('m.date >= :start')
+            ->andWhere('m.date <= :end')
+            ->setParameter('user', $user)
+            ->setParameter('start', $startDate)
+            ->setParameter('end', $endDate)
+            ->orderBy('m.date', 'ASC');
+        return $qb->getQuery()->getResult();
+    }
 }

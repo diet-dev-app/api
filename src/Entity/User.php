@@ -92,16 +92,11 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Meal::class, orphanRemoval: true)]
     private Collection $meals;
 
-    /**
-     * @var Collection<int, MealOption>
-     */
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: MealOption::class, orphanRemoval: true)]
-    private Collection $mealOptions;
+
 
     public function __construct()
     {
         $this->meals = new ArrayCollection();
-        $this->mealOptions = new ArrayCollection();
     }
 
     /**
@@ -112,13 +107,7 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
         return $this->meals;
     }
 
-    /**
-     * @return Collection<int, MealOption>
-     */
-    public function getMealOptions(): Collection
-    {
-        return $this->mealOptions;
-    }
+
 
     public function getId(): ?int
     {

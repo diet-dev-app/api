@@ -1,3 +1,5 @@
+# OpenAI Shopping List Service
+
 # yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
 
 # This file is the entry point to configure your own services.
@@ -21,3 +23,8 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    # OpenAI Shopping List Service
+    App\Service\OpenAIShoppingListService:
+        arguments:
+            $openaiApiKey: '%env(OPENAI_API_KEY)%'

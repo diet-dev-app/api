@@ -67,6 +67,13 @@ def test_meal_options(token):
     resp = requests.delete(f"{BASE_URL}/meal-options/{option_id}", headers=headers)
     print("Delete Meal Option:", resp.status_code, resp.json())
 
+# 6. Get shopping list for a date range
+def test_shopping_list(token):
+    headers = {"Authorization": f"Bearer {token}"}
+    params = {"start": "2026-02-15", "end": "2026-02-21"}
+    resp = requests.get(f"{BASE_URL}/shopping-list", headers=headers, params=params)
+    print("Shopping List:", resp.status_code, resp.json())
+
 if __name__ == "__main__":
     test_register()
     token = test_login()
@@ -74,5 +81,6 @@ if __name__ == "__main__":
         test_profile(token)
         test_meals(token)
         test_meal_options(token)
+        test_shopping_list(token)
     else:
         print("Login failed, cannot test protected endpoints.")
