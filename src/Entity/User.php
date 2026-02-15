@@ -8,14 +8,53 @@ use App\Entity\Meal;
 use App\Entity\MealOption;
 use App\Repository\UserRepository;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
-class User implements PasswordAuthenticatedUserInterface
+class User implements PasswordAuthenticatedUserInterface, UserInterface
 {
+    /**
+     * Returns the identifier for this user (email).
+     */
+    public function getUserIdentifier(): string
+    {
+        return $this->email;
+    }
+
+    /**
+     * @deprecated since Symfony 5.3, use getUserIdentifier instead
+     */
+    public function getUsername(): string
+    {
+        return $this->email;
+    }
+
+    /**
+     * Returns the roles granted to the user.
+     * Guarantees at least ROLE_USER.
+     */
+    public function getRoles(): array
+    {
+        $roles = $this->roles;
+        // guarantee every user at least has ROLE_USER
+        if (!in_array('ROLE_USER', $roles, true)) {
+            $roles[] = 'ROLE_USER';
+        }
+        return array_unique($roles);
+    }
+
+    /**
+     * Removes sensitive data from the user.
+     */
+    public function eraseCredentials(): void
+    {
+        // If you store any temporary, sensitive data on the user, clear it here
+        // Example: $this->plainPassword = null;
+    }
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
@@ -146,10 +185,6 @@ class User implements PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getRoles(): array
-    {
-        return $this->roles;
-    }
     public function setRoles(array $roles): self
     {
         $this->roles = $roles;
