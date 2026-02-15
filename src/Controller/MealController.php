@@ -9,7 +9,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class MealController extends AbstractController
 {
     #[Route('/api/meals', name: 'api_meals_list', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(\Doctrine\ORM\EntityManagerInterface $em): JsonResponse
     {
         $user = $this->getUser();
         if (!$user) {
@@ -18,12 +18,34 @@ final class MealController extends AbstractController
         $meals = $user->getMeals();
         $data = [];
         foreach ($meals as $meal) {
+            // Group meal options by meal time
+            $groupedOptions = [];
+            foreach ($meal->getMealOptions() as $option) {
+                $mealTime = $option->getMealTime();
+                $mealTimeId = $mealTime ? $mealTime->getId() : null;
+                if ($mealTimeId) {
+                    if (!isset($groupedOptions[$mealTimeId])) {
+                        $groupedOptions[$mealTimeId] = [
+                            'id' => $mealTime->getId(),
+                            'name' => $mealTime->getName(),
+                            'label' => $mealTime->getLabel(),
+                            'options' => []
+                        ];
+                    }
+                    $groupedOptions[$mealTimeId]['options'][] = [
+                        'id' => $option->getId(),
+                        'name' => $option->getName(),
+                        'description' => $option->getDescription(),
+                    ];
+                }
+            }
             $data[] = [
                 'id' => $meal->getId(),
                 'name' => $meal->getName(),
                 'calories' => $meal->getCalories(),
                 'date' => $meal->getDate()->format('c'),
                 'notes' => $meal->getNotes(),
+                'meal_times' => array_values($groupedOptions),
             ];
         }
         return $this->json($data);

@@ -29,9 +29,39 @@ class Meal
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $notes = null;
 
+    #[ORM\ManyToMany(targetEntity: MealOption::class)]
+    #[ORM\JoinTable(name: 'meal_meal_option')]
+    private $mealOptions;
+
+    public function __construct()
+    {
+        $this->mealOptions = new \Doctrine\Common\Collections\ArrayCollection();
+    }
+
     public function getId(): ?int
     {
         return $this->id;
+    }
+    /**
+     * @return \Doctrine\Common\Collections\Collection|MealOption[]
+     */
+    public function getMealOptions(): \Doctrine\Common\Collections\Collection
+    {
+        return $this->mealOptions;
+    }
+
+    public function addMealOption(MealOption $mealOption): self
+    {
+        if (!$this->mealOptions->contains($mealOption)) {
+            $this->mealOptions[] = $mealOption;
+        }
+        return $this;
+    }
+
+    public function removeMealOption(MealOption $mealOption): self
+    {
+        $this->mealOptions->removeElement($mealOption);
+        return $this;
     }
 
     public function getUser(): ?User
