@@ -1,0 +1,47 @@
+
+version: '3.8'
+services:
+  php:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile-php
+    container_name: symfony_api_php
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    environment:
+      - SYMFONY_ENV=dev
+    depends_on:
+      - db
+    networks:
+      - symfony
+    expose:
+      - "9000"
+  nginx:
+    image: nginx:alpine
+    container_name: symfony_api_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - php
+    networks:
+      - symfony
+  db:
+    image: mysql:8.0
+    container_name: symfony_api_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: diet_api
+      MYSQL_USER: db_user
+      MYSQL_PASSWORD: db_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3306:3306"
+    networks:
+      - symfony
+networks:
+  symfony:
+    driver: bridge
