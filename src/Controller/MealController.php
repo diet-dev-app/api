@@ -59,15 +59,34 @@ final class MealController extends AbstractController
             return $this->json(['error' => 'Unauthorized'], 401);
         }
         $data = json_decode($request->getContent(), true);
-        if (!$data || !isset($data['name'], $data['calories'], $data['date'])) {
-            return $this->json(['error' => 'name, calories, and date are required'], 400);
+        if (!$data || !isset($data['date'])) {
+            return $this->json(['error' => 'date is required'], 400);
         }
         $meal = new \App\Entity\Meal();
         $meal->setUser($user);
-        $meal->setName($data['name']);
-        $meal->setCalories((int)$data['calories']);
+        if (isset($data['name'])) {
+            $meal->setName($data['name']);
+        } else {
+            $meal->setName('');
+        }
+        if (isset($data['calories'])) {
+            $meal->setCalories((int)$data['calories']);
+        } else {
+            $meal->setCalories(0);
+        }
         $meal->setDate(new \DateTimeImmutable($data['date']));
         $meal->setNotes($data['notes'] ?? null);
+
+        // Add MealOptions by IDs if provided
+        if (!empty($data['meal_option_ids']) && is_array($data['meal_option_ids'])) {
+            $mealOptionRepo = $em->getRepository(\App\Entity\MealOption::class);
+            foreach ($data['meal_option_ids'] as $optionId) {
+                $option = $mealOptionRepo->find($optionId);
+                if ($option) {
+                    $meal->addMealOption($option);
+                }
+            }
+        }
 
         $errors = $validator->validate($meal);
         if (count($errors) > 0) {
