@@ -1,0 +1,127 @@
+WeeklyReport:
+  type: object
+  properties:
+    id:
+      type: integer
+    week_start:
+      type: string
+      format: date
+      example: "2026-02-17"
+    week_end:
+      type: string
+      format: date
+      example: "2026-02-23"
+    target_calories:
+      type: integer
+      example: 2000
+    average_calories:
+      type: integer
+      example: 1850
+    total_calories:
+      type: integer
+      example: 12950
+    days_tracked:
+      type: integer
+      example: 6
+    goal_adherence:
+      type: object
+      properties:
+        score:
+          type: integer
+          description: Adherence score 0-100
+          example: 78
+        days_on_target:
+          type: integer
+          example: 4
+        days_over:
+          type: integer
+          example: 1
+        days_under:
+          type: integer
+          example: 1
+        days_not_tracked:
+          type: integer
+          example: 1
+    calorie_analysis:
+      type: object
+      properties:
+        daily_breakdown:
+          type: array
+          items:
+            type: object
+        weekly_total:
+          type: integer
+        weekly_target:
+          type: integer
+        weekly_difference:
+          type: integer
+        average_daily:
+          type: integer
+    nutritional_gaps:
+      type: array
+      items:
+        type: object
+        properties:
+          area:
+            type: string
+          severity:
+            type: string
+            enum: [low, moderate, high]
+          detail:
+            type: string
+    achievements:
+      type: array
+      items:
+        type: string
+    notes_analysis:
+      type: object
+      properties:
+        patterns:
+          type: array
+          items:
+            type: string
+        concerns:
+          type: array
+          items:
+            type: string
+        mood_trend:
+          type: string
+          enum: [positive, neutral, negative, mixed]
+    recommendations:
+      type: array
+      items:
+        type: string
+    summary:
+      type: string
+    generated_at:
+      type: string
+      format: date-time
+
+WeeklyReportSummary:
+  type: object
+  description: Light version of WeeklyReport used in history list
+  properties:
+    id:
+      type: integer
+    week_start:
+      type: string
+      format: date
+    week_end:
+      type: string
+      format: date
+    score:
+      type: integer
+      nullable: true
+    target_calories:
+      type: integer
+    average_calories:
+      type: integer
+    total_calories:
+      type: integer
+    days_tracked:
+      type: integer
+    summary:
+      type: string
+    generated_at:
+      type: string
+      format: date-time

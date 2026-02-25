@@ -1,0 +1,23 @@
+MessageResponse:
+  type: object
+  properties:
+    message:
+      type: string
+      example: Operation successful
+
+ErrorResponse:
+  type: object
+  properties:
+    error:
+      type: string
+      example: Unauthorized
+
+ValidationErrorResponse:
+  type: object
+  properties:
+    errors:
+      type: object
+      additionalProperties:
+        type: string
+      example:
+        email: This value is not a valid email address.

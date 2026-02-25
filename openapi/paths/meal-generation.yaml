@@ -1,0 +1,72 @@
+# Meal Generation routes
+
+generate:
+  post:
+    tags: [Meal Generation]
+    summary: Generate an AI meal plan for a specific date
+    description: |
+      Asks OpenAI to select the best combination of existing **MealOption**
+      records to meet the user's daily caloric goal (or a custom override).
+
+      Only uses meal options already stored in the database — no new options
+      are invented.
+
+      Add **?save=true** to automatically persist the generated plan as a
+      `Meal` entity with the selected MealOptions linked.
+    operationId: generateMealPlan
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: save
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+        description: When true, persist the generated plan as a Meal entity
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/meal-generation.yaml#/MealPlanRequest'
+          example:
+            date: "2026-03-01"
+            target_calories: 2000
+    responses:
+      '201':
+        description: Meal plan generated successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/meal-generation.yaml#/MealPlanResponse'
+      '400':
+        description: Missing date or invalid format
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '404':
+        description: No active caloric goal and no target_calories provided, or no meal options available
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '422':
+        description: OpenAI could not generate a valid meal plan
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '500':
+        description: OpenAI API failure
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'

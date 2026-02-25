@@ -1,0 +1,13 @@
+FileImportResponse:
+  type: object
+  description: Result of importing meal options from a nutritionist diet document
+  properties:
+    imported:
+      type: integer
+      description: Number of MealOption records successfully created
+      example: 4
+    meal_options:
+      type: array
+      description: The newly created meal options with estimated calories and inferred ingredients
+      items:
+        $ref: '../schemas/meal-options.yaml#/MealOption'

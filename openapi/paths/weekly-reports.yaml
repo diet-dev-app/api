@@ -1,0 +1,107 @@
+# Weekly Reports routes
+
+weekly:
+  get:
+    tags: [Reports]
+    summary: Get or generate a weekly nutritional analysis
+    description: |
+      Returns an AI-generated nutritional analysis for the requested week,
+      including:
+      - Caloric goal adherence score (0-100)
+      - Day-by-day calorie breakdown vs. target
+      - Nutritional gaps (protein, vegetables, etc.)
+      - Achievements and motivational notes
+      - Analysis of the user's personal meal notes (mood, energy, symptoms)
+      - Actionable recommendations for the following week
+
+      Reports are **cached** per user per week. Add **?regenerate=true** to
+      force a fresh OpenAI call.
+    operationId: getWeeklyReport
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: week_start
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+        description: "Monday of the desired week (Y-m-d). Defaults to the current week's Monday."
+      - name: regenerate
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+        description: Force re-generation even if a cached report exists
+    responses:
+      '200':
+        description: Weekly nutritional analysis report
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/weekly-reports.yaml#/WeeklyReport'
+      '400':
+        description: Invalid week_start format (must be a Monday in Y-m-d)
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '404':
+        description: No caloric goal found for the requested week, or no meals to analyse
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '422':
+        description: OpenAI could not generate a valid analysis
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '500':
+        description: OpenAI API failure
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+
+history:
+  get:
+    tags: [Reports]
+    summary: List recent weekly reports
+    description: Returns a lightweight list of past weekly reports (no full analysis payload).
+    operationId: listWeeklyReportHistory
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 52
+          default: 8
+        description: Maximum number of reports to return
+    responses:
+      '200':
+        description: List of recent weekly reports (summaries)
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../components/schemas/weekly-reports.yaml#/WeeklyReportSummary'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'

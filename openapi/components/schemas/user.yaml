@@ -1,0 +1,25 @@
+UserProfile:
+  type: object
+  properties:
+    id:
+      type: integer
+      example: 1
+    email:
+      type: string
+      example: user@example.com
+    name:
+      type: string
+      nullable: true
+      example: Carlos
+    createdAt:
+      type: string
+      format: date-time
+      example: "2026-02-15T10:00:00+00:00"
+    isActive:
+      type: boolean
+      example: true
+    roles:
+      type: array
+      items:
+        type: string
+      example: ["ROLE_USER"]

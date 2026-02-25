@@ -27,14 +27,30 @@ class ShoppingListController extends AbstractController
         if (empty($meals)) {
             return $this->json(['error' => 'No meals found for this range'], 404);
         }
-        // Prepare meal data for OpenAI
+        // Prepare meal data for OpenAI (including ingredients per meal option)
         $mealData = array_map(function($meal) {
+            $options = [];
+            foreach ($meal->getMealOptions() as $option) {
+                $options[] = [
+                    'name'               => $option->getName(),
+                    'description'        => $option->getDescription(),
+                    'estimated_calories' => $option->getEstimatedCalories(),
+                    'meal_time'          => $option->getMealTime()?->getLabel() ?? $option->getMealTime()?->getName(),
+                    'ingredients'        => array_map(
+                        fn($i) => [
+                            'name'     => $i->getName(),
+                            'quantity' => $i->getQuantity(),
+                            'unit'     => $i->getUnit(),
+                        ],
+                        $option->getIngredients()->toArray()
+                    ),
+                ];
+            }
             return [
-                'name' => $meal->getName(),
-                'calories' => $meal->getCalories(),
-                'date' => $meal->getDate()->format('Y-m-d'),
-                'notes' => $meal->getNotes(),
-                // Add more fields as needed
+                'name'    => $meal->getName(),
+                'date'    => $meal->getDate()->format('Y-m-d'),
+                'notes'   => $meal->getNotes(),
+                'options' => $options,
             ];
         }, $meals);
         $shoppingList = $shoppingListService->generateShoppingList($mealData);

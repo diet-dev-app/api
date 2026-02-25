@@ -1,0 +1,56 @@
+plugins:
+  # Plugin de tiempo - sin API key requerida
+  time:
+    url: oci://ghcr.io/tuananh/time-plugin:latest
+
+  # Plugin de hash - sin API key requerida
+  hash:
+    url: oci://ghcr.io/tuananh/hash-plugin:latest
+
+  # Plugin de fetch - obtener contenido web
+  fetch:
+    url: oci://ghcr.io/tuananh/fetch-plugin:latest
+    runtime_config:
+      allowed_hosts:
+        - "*"  # Permite acceso a cualquier host (ajustar según necesidad)
+      memory_limit: "100 MB"
+
+  # Plugin de Context7 - documentación de librerías
+  context7:
+    url: oci://ghcr.io/tuananh/context7-plugin:nightly
+    runtime_config:
+      allowed_hosts:
+        - context7.com
+
+  # Plugin de pensamiento secuencial
+  sequentialthinking:
+    url: oci://ghcr.io/sevir/sequentialthinking-plugin:latest
+
+  # Plugin de búsqueda Google - REQUIERE API KEY
+  google:
+    url: oci://ghcr.io/sevir/hyper-mcp/plugin-google-search:latest
+    runtime_config:
+      env_vars:
+        GOOGLE_API_KEY: "${GOOGLE_API_KEY}"
+        GOOGLE_SEARCH_ENGINE_ID: "${GOOGLE_SEARCH_ENGINE_ID}"
+      allowed_hosts:
+        - www.googleapis.com
+        - customsearch.googleapis.com
+
+  # Plugin de Perplexity - REQUIERE API KEY (comentado por defecto)
+  # perplexity:
+  #   url: oci://ghcr.io/sevir/hyper-mcp/plugin-perplexity-search:latest
+  #   runtime_config:
+  #     env_vars:
+  #       PERPLEXITY_API_KEY: "${PERPLEXITY_API_KEY}"
+  #     allowed_hosts:
+  #       - api.perplexity.ai
+
+  # Plugin de Brave Search - REQUIERE API KEY (comentado por defecto)
+  # brave:
+  #   url: oci://ghcr.io/sevir/hyper-mcp/plugin-brave-search:latest
+  #   runtime_config:
+  #     env_vars:
+  #       BRAVE_API_KEY: "${BRAVE_API_KEY}"
+  #     allowed_hosts:
+  #       - api.search.brave.com

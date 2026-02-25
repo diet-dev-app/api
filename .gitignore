@@ -17,4 +17,11 @@
 /phpunit.xml
 /.phpunit.cache/
 ###< phpunit/phpunit ###
-.env
+/.env
+
+# MCP configuration with secrets
+.vscode/mcp.json
+
+/composer.lock
+/symfony.lock
+/error_log

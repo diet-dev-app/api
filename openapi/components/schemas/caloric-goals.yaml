@@ -1,0 +1,64 @@
+CaloricGoal:
+  type: object
+  description: A user's daily caloric target for a specific date period
+  properties:
+    id:
+      type: integer
+      example: 1
+    daily_calories:
+      type: integer
+      description: Daily caloric target in kcal
+      example: 2000
+    start_date:
+      type: string
+      format: date
+      example: "2026-03-01"
+    end_date:
+      type: string
+      format: date
+      nullable: true
+      description: Null means open-ended (currently active)
+      example: "2026-03-31"
+    label:
+      type: string
+      nullable: true
+      description: "Optional label: cutting, bulking, maintenance, etc."
+      example: cutting
+    notes:
+      type: string
+      nullable: true
+      example: "Reducing intake after holiday season"
+    created_at:
+      type: string
+      format: date-time
+      example: "2026-03-01T10:00:00+00:00"
+    updated_at:
+      type: string
+      format: date-time
+      nullable: true
+
+CaloricGoalRequest:
+  type: object
+  required: [daily_calories, start_date]
+  properties:
+    daily_calories:
+      type: integer
+      minimum: 500
+      maximum: 10000
+      example: 2000
+    start_date:
+      type: string
+      format: date
+      example: "2026-03-01"
+    end_date:
+      type: string
+      format: date
+      nullable: true
+      example: "2026-03-31"
+    label:
+      type: string
+      maxLength: 100
+      example: cutting
+    notes:
+      type: string
+      nullable: true

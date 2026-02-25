@@ -1,0 +1,125 @@
+MealTimeWithOptions:
+  type: object
+  properties:
+    id:
+      type: integer
+      example: 1
+    name:
+      type: string
+      example: breakfast
+    label:
+      type: string
+      example: Breakfast
+    options:
+      type: array
+      items:
+        $ref: '../schemas/meals.yaml#/MealOptionInMeal'
+
+MealOptionInMeal:
+  type: object
+  properties:
+    id:
+      type: integer
+      example: 10
+    name:
+      type: string
+      example: Oatmeal with banana
+    description:
+      type: string
+      nullable: true
+    estimated_calories:
+      type: number
+      nullable: true
+    ingredients:
+      type: array
+      items:
+        $ref: '../schemas/ingredients.yaml#/Ingredient'
+
+Meal:
+  type: object
+  properties:
+    id:
+      type: integer
+      example: 5
+    name:
+      type: string
+      example: Monday plan
+    calories:
+      type: integer
+      example: 1800
+    date:
+      type: string
+      format: date-time
+      example: "2026-02-22T00:00:00+00:00"
+    notes:
+      type: string
+      nullable: true
+      example: Cheat day – keep dinner light
+    meal_times:
+      type: array
+      description: Meal options grouped by meal time (breakfast, lunch, snack, dinner)
+      items:
+        $ref: '../schemas/meals.yaml#/MealTimeWithOptions'
+
+MealCreateRequest:
+  type: object
+  required: [date]
+  properties:
+    date:
+      type: string
+      format: date
+      example: "2026-02-22"
+    name:
+      type: string
+      example: Monday plan
+    calories:
+      type: integer
+      example: 1800
+    notes:
+      type: string
+      nullable: true
+      example: Cheat day – keep dinner light
+    meal_option_ids:
+      type: array
+      description: IDs of existing MealOptions to attach to this Meal
+      items:
+        type: integer
+      example: [10, 11, 12]
+
+MealUpdateRequest:
+  type: object
+  properties:
+    name:
+      type: string
+      example: Monday plan (updated)
+    calories:
+      type: integer
+      example: 2000
+    date:
+      type: string
+      format: date
+      example: "2026-02-23"
+    notes:
+      type: string
+      nullable: true
+
+MealSimple:
+  type: object
+  description: Simplified meal response (returned on create / update)
+  properties:
+    id:
+      type: integer
+      example: 5
+    name:
+      type: string
+      example: Monday plan
+    calories:
+      type: integer
+      example: 1800
+    date:
+      type: string
+      format: date-time
+      example: "2026-02-22T00:00:00+00:00"
+    notes:
+      type: string
+      nullable: true

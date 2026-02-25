@@ -1,0 +1,89 @@
+# Health check, registration and login routes
+
+healthCheck:
+  get:
+    tags: [Auth]
+    summary: API health check
+    description: Returns basic status information. No authentication required.
+    operationId: healthCheck
+    security: []
+    responses:
+      '200':
+        description: API is running
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: API Diet is running
+                status:
+                  type: string
+                  example: ok
+                timestamp:
+                  type: string
+                  format: date-time
+
+register:
+  post:
+    tags: [Auth]
+    summary: Register a new user
+    description: Creates a new user account. No authentication required.
+    operationId: register
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/auth.yaml#/RegisterRequest'
+    responses:
+      '201':
+        description: User registered successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/MessageResponse'
+            example:
+              message: User registered successfully
+      '400':
+        description: Missing fields or validation error
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '../components/schemas/common.yaml#/ErrorResponse'
+                - $ref: '../components/schemas/common.yaml#/ValidationErrorResponse'
+
+login:
+  post:
+    tags: [Auth]
+    summary: Login and obtain JWT token
+    description: |
+      Authenticates the user with email/password and returns a signed JWT token.
+      The token must be included in the `Authorization: Bearer <token>` header
+      for all protected endpoints.
+    operationId: login
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/auth.yaml#/LoginRequest'
+    responses:
+      '200':
+        description: Authentication successful
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/auth.yaml#/LoginResponse'
+      '401':
+        description: Invalid credentials
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+            example:
+              error: Invalid credentials.

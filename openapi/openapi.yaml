@@ -1,0 +1,188 @@
+openapi: 3.0.3
+info:
+  title: Diet API
+  description: |
+    REST API for the Diet management application.
+
+    ## Authentication
+    Most endpoints require a **JWT Bearer token**.
+    1. Register a user via `POST /api/register`
+    2. Obtain a token via `POST /api/login`
+    3. Pass the token in every protected request as:
+       ```
+       Authorization: Bearer <token>
+       ```
+
+    ## Base URL
+    `http://localhost` (or your deployed domain)
+
+  version: "1.0.0"
+  contact:
+    name: Diet Dev Team
+
+servers:
+  - url: http://localhost
+    description: Local Docker environment
+
+tags:
+  - name: Auth
+    description: Registration & login
+  - name: User
+    description: Authenticated user profile
+  - name: Meals
+    description: Daily meal plans for the current user
+  - name: Meal Options
+    description: Catalogue of reusable meal option templates (with ingredients)
+  - name: Shopping List
+    description: AI-generated shopping list based on planned meals
+  - name: File Import
+    description: Import meal options from nutritionist diet documents via AI
+  - name: Caloric Goals
+    description: Per-user daily caloric targets with date-range periods
+  - name: Meal Generation
+    description: AI-powered daily meal plan generation from existing meal options
+  - name: Reports
+    description: AI-generated weekly nutritional analysis and history
+
+# ---------------------------------------------------------------------------
+# Security scheme
+# ---------------------------------------------------------------------------
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ── Auth ────────────────────────────────────────────────────────────────
+    RegisterRequest:
+      $ref: './components/schemas/auth.yaml#/RegisterRequest'
+    LoginRequest:
+      $ref: './components/schemas/auth.yaml#/LoginRequest'
+    LoginResponse:
+      $ref: './components/schemas/auth.yaml#/LoginResponse'
+
+    # ── User ────────────────────────────────────────────────────────────────
+    UserProfile:
+      $ref: './components/schemas/user.yaml#/UserProfile'
+
+    # ── Ingredients ─────────────────────────────────────────────────────────
+    Ingredient:
+      $ref: './components/schemas/ingredients.yaml#/Ingredient'
+    IngredientInput:
+      $ref: './components/schemas/ingredients.yaml#/IngredientInput'
+
+    # ── MealTime ────────────────────────────────────────────────────────────
+    MealTime:
+      $ref: './components/schemas/meal-times.yaml#/MealTime'
+
+    # ── MealOption ──────────────────────────────────────────────────────────
+    MealOption:
+      $ref: './components/schemas/meal-options.yaml#/MealOption'
+    MealOptionCreateRequest:
+      $ref: './components/schemas/meal-options.yaml#/MealOptionCreateRequest'
+    MealOptionUpdateRequest:
+      $ref: './components/schemas/meal-options.yaml#/MealOptionUpdateRequest'
+
+    # ── Meals ───────────────────────────────────────────────────────────────
+    MealTimeWithOptions:
+      $ref: './components/schemas/meals.yaml#/MealTimeWithOptions'
+    MealOptionInMeal:
+      $ref: './components/schemas/meals.yaml#/MealOptionInMeal'
+    Meal:
+      $ref: './components/schemas/meals.yaml#/Meal'
+    MealCreateRequest:
+      $ref: './components/schemas/meals.yaml#/MealCreateRequest'
+    MealUpdateRequest:
+      $ref: './components/schemas/meals.yaml#/MealUpdateRequest'
+    MealSimple:
+      $ref: './components/schemas/meals.yaml#/MealSimple'
+
+    # ── Shopping List ────────────────────────────────────────────────────────
+    ShoppingListItem:
+      $ref: './components/schemas/shopping-list.yaml#/ShoppingListItem'
+    ShoppingListResponse:
+      $ref: './components/schemas/shopping-list.yaml#/ShoppingListResponse'
+
+    # ── File Import ──────────────────────────────────────────────────────────
+    FileImportResponse:
+      $ref: './components/schemas/file-import.yaml#/FileImportResponse'
+
+    # ── Caloric Goals ────────────────────────────────────────────────────────
+    CaloricGoal:
+      $ref: './components/schemas/caloric-goals.yaml#/CaloricGoal'
+    CaloricGoalRequest:
+      $ref: './components/schemas/caloric-goals.yaml#/CaloricGoalRequest'
+
+    # ── Meal Generation ──────────────────────────────────────────────────────
+    MealPlanRequest:
+      $ref: './components/schemas/meal-generation.yaml#/MealPlanRequest'
+    MealPlanResponse:
+      $ref: './components/schemas/meal-generation.yaml#/MealPlanResponse'
+
+    # ── Weekly Reports ────────────────────────────────────────────────────────
+    WeeklyReport:
+      $ref: './components/schemas/weekly-reports.yaml#/WeeklyReport'
+    WeeklyReportSummary:
+      $ref: './components/schemas/weekly-reports.yaml#/WeeklyReportSummary'
+
+    # ── Common ────────────────────────────────────────────────────────────────
+    MessageResponse:
+      $ref: './components/schemas/common.yaml#/MessageResponse'
+    ErrorResponse:
+      $ref: './components/schemas/common.yaml#/ErrorResponse'
+    ValidationErrorResponse:
+      $ref: './components/schemas/common.yaml#/ValidationErrorResponse'
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+paths:
+  # ── Health check ──────────────────────────────────────────────────────────
+  /:
+    $ref: './paths/auth.yaml#/healthCheck'
+
+  # ── Auth ──────────────────────────────────────────────────────────────────
+  /api/register:
+    $ref: './paths/auth.yaml#/register'
+  /api/login:
+    $ref: './paths/auth.yaml#/login'
+
+  # ── User ──────────────────────────────────────────────────────────────────
+  /api/user:
+    $ref: './paths/user.yaml#/profile'
+
+  # ── Meals ─────────────────────────────────────────────────────────────────
+  /api/meals:
+    $ref: './paths/meals.yaml#/collection'
+  /api/meals/{id}:
+    $ref: './paths/meals.yaml#/item'
+  /api/meals/generate:
+    $ref: './paths/meal-generation.yaml#/generate'
+
+  # ── Meal Options ──────────────────────────────────────────────────────────
+  /api/meal-options:
+    $ref: './paths/meal-options.yaml#/collection'
+  /api/meal-options/{id}:
+    $ref: './paths/meal-options.yaml#/item'
+  /api/meal-options/import:
+    $ref: './paths/meal-options.yaml#/import'
+
+  # ── Shopping List ─────────────────────────────────────────────────────────
+  /api/shopping-list:
+    $ref: './paths/shopping-list.yaml#/generate'
+
+  # ── Caloric Goals ─────────────────────────────────────────────────────────
+  /api/caloric-goals:
+    $ref: './paths/caloric-goals.yaml#/collection'
+  /api/caloric-goals/active:
+    $ref: './paths/caloric-goals.yaml#/active'
+  /api/caloric-goals/{id}:
+    $ref: './paths/caloric-goals.yaml#/item'
+
+  # ── Weekly Reports ────────────────────────────────────────────────────────
+  /api/reports/weekly:
+    $ref: './paths/weekly-reports.yaml#/weekly'
+  /api/reports/weekly/history:
+    $ref: './paths/weekly-reports.yaml#/history'

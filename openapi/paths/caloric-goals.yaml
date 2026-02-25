@@ -1,0 +1,229 @@
+# Caloric Goals routes
+
+collection:
+  get:
+    tags: [Caloric Goals]
+    summary: List all caloric goals
+    description: Returns all caloric goals for the authenticated user ordered by start date descending.
+    operationId: listCaloricGoals
+    security:
+      - bearerAuth: []
+    responses:
+      '200':
+        description: List of caloric goals
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../components/schemas/caloric-goals.yaml#/CaloricGoal'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+
+  post:
+    tags: [Caloric Goals]
+    summary: Create a new caloric goal
+    description: |
+      Creates a caloric goal for a specific date range. Date ranges must not
+      overlap with existing goals for the same user. Setting end_date to null
+      creates an open-ended (ongoing) goal.
+    operationId: createCaloricGoal
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/caloric-goals.yaml#/CaloricGoalRequest'
+          example:
+            daily_calories: 2000
+            start_date: "2026-03-01"
+            end_date: "2026-03-31"
+            label: cutting
+            notes: "Reducing intake after holiday season"
+    responses:
+      '201':
+        description: Caloric goal created
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/caloric-goals.yaml#/CaloricGoal'
+      '400':
+        description: Missing required fields or invalid data
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '409':
+        description: Date range overlaps with an existing goal
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+            example:
+              error: The date range overlaps with an existing caloric goal.
+
+active:
+  get:
+    tags: [Caloric Goals]
+    summary: Get the currently active caloric goal
+    description: Returns the caloric goal that covers today (or a specific date via ?date=).
+    operationId: getActiveCaloricGoal
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: date
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+        description: "Check which goal is active on this specific date (default: today)"
+    responses:
+      '200':
+        description: Active caloric goal
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/caloric-goals.yaml#/CaloricGoal'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '404':
+        description: No active caloric goal found
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+
+item:
+  get:
+    tags: [Caloric Goals]
+    summary: Get a caloric goal by ID
+    operationId: getCaloricGoal
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    responses:
+      '200':
+        description: Caloric goal
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/caloric-goals.yaml#/CaloricGoal'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '404':
+        description: Goal not found
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+
+  put:
+    tags: [Caloric Goals]
+    summary: Update a caloric goal
+    description: Partially or fully update a caloric goal. Date range changes are validated for overlaps.
+    operationId: updateCaloricGoal
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/caloric-goals.yaml#/CaloricGoalRequest'
+    responses:
+      '200':
+        description: Caloric goal updated
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/caloric-goals.yaml#/CaloricGoal'
+      '400':
+        description: Invalid data
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '404':
+        description: Goal not found
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '409':
+        description: Updated date range overlaps with another goal
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+
+  delete:
+    tags: [Caloric Goals]
+    summary: Delete a caloric goal
+    operationId: deleteCaloricGoal
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    responses:
+      '200':
+        description: Caloric goal deleted
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/MessageResponse'
+            example:
+              message: Caloric goal deleted successfully.
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '404':
+        description: Goal not found
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'

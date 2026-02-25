@@ -1,0 +1,67 @@
+MealPlanRequest:
+  type: object
+  required: [date]
+  properties:
+    date:
+      type: string
+      format: date
+      example: "2026-03-01"
+    target_calories:
+      type: integer
+      nullable: true
+      description: "Override the user's active caloric goal for this request"
+      example: 2000
+
+MealPlanResponse:
+  type: object
+  properties:
+    date:
+      type: string
+      format: date
+      example: "2026-03-01"
+    target_calories:
+      type: integer
+      example: 2000
+    total_calories:
+      type: integer
+      example: 1950
+    difference:
+      type: integer
+      description: total_calories minus target_calories
+      example: -50
+    meals:
+      type: array
+      items:
+        type: object
+        properties:
+          meal_time:
+            type: string
+            example: breakfast
+          meal_option_id:
+            type: integer
+            example: 5
+          meal_option_name:
+            type: string
+            example: "Greek yogurt with granola"
+          estimated_calories:
+            type: number
+            example: 320
+          reason:
+            type: string
+            example: "High protein breakfast within calorie budget"
+    notes:
+      type: string
+      nullable: true
+      example: "Well-balanced plan. Consider adding a small snack."
+    saved_meal:
+      type: object
+      nullable: true
+      description: Present only when ?save=true is passed
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        date:
+          type: string
+          format: date

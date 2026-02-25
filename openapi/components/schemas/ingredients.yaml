@@ -1,0 +1,31 @@
+Ingredient:
+  type: object
+  properties:
+    id:
+      type: integer
+      example: 42
+    name:
+      type: string
+      example: Chicken breast
+    quantity:
+      type: number
+      format: float
+      example: 150.0
+    unit:
+      type: string
+      example: g
+
+IngredientInput:
+  type: object
+  required: [name, quantity, unit]
+  properties:
+    name:
+      type: string
+      example: Chicken breast
+    quantity:
+      type: number
+      format: float
+      example: 150.0
+    unit:
+      type: string
+      example: g

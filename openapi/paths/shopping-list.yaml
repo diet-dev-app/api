@@ -1,0 +1,72 @@
+# Shopping List routes
+
+generate:
+  get:
+    tags: [Shopping List]
+    summary: Generate AI shopping list
+    description: |
+      Uses OpenAI to generate a consolidated shopping list based on all meals
+      the authenticated user has planned within the given date range.
+
+      The AI analyses every meal option's ingredients and returns a cleaned,
+      categorised shopping list with consolidated quantities.
+
+      **Date format:** `YYYY-MM-DD`
+    operationId: getShoppingList
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: start
+        in: query
+        required: true
+        description: Start date (inclusive) of the date range
+        schema:
+          type: string
+          format: date
+        example: "2026-02-17"
+      - name: end
+        in: query
+        required: true
+        description: End date (inclusive) of the date range
+        schema:
+          type: string
+          format: date
+        example: "2026-02-23"
+    responses:
+      '200':
+        description: AI-generated shopping list
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/shopping-list.yaml#/ShoppingListResponse'
+            example:
+              shopping_list:
+                - name: Chicken breast
+                  quantity: "600g"
+                  category: Protein
+                - name: Rolled oats
+                  quantity: "400g"
+                  category: Grains
+              notes: "Consider buying organic eggs."
+      '400':
+        description: Missing start or end date
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+            example:
+              error: Missing start or end date
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '404':
+        description: No meals found for the given date range
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+            example:
+              error: No meals found for this range

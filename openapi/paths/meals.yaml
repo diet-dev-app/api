@@ -1,0 +1,152 @@
+# Meals routes
+
+collection:
+  get:
+    tags: [Meals]
+    summary: List user's meals
+    description: |
+      Returns all meals belonging to the authenticated user.
+      Each meal includes its associated meal options grouped by meal time
+      (breakfast, lunch, snack, dinner), with their ingredient lists.
+    operationId: listMeals
+    security:
+      - bearerAuth: []
+    responses:
+      '200':
+        description: List of meals
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../components/schemas/meals.yaml#/Meal'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+
+  post:
+    tags: [Meals]
+    summary: Create a new meal
+    description: |
+      Creates a meal day entry for the authenticated user.
+      You can optionally attach existing `MealOption` IDs.
+    operationId: createMeal
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/meals.yaml#/MealCreateRequest'
+          example:
+            date: "2026-02-22"
+            name: Monday plan
+            calories: 1800
+            notes: Light dinner
+            meal_option_ids: [10, 11]
+    responses:
+      '201':
+        description: Meal created
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/meals.yaml#/MealSimple'
+      '400':
+        description: Missing required field or validation error
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+
+item:
+  put:
+    tags: [Meals]
+    summary: Update a meal
+    description: Updates the editable fields of a meal belonging to the authenticated user.
+    operationId: updateMeal
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        example: 5
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/meals.yaml#/MealUpdateRequest'
+    responses:
+      '200':
+        description: Meal updated
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/meals.yaml#/MealSimple'
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '404':
+        description: Meal not found or does not belong to user
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+
+  delete:
+    tags: [Meals]
+    summary: Delete a meal
+    description: Permanently deletes a meal belonging to the authenticated user.
+    operationId: deleteMeal
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        example: 5
+    responses:
+      '200':
+        description: Meal deleted
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/MessageResponse'
+            example:
+              message: Meal deleted
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '404':
+        description: Meal not found or does not belong to user
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'

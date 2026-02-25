@@ -1,0 +1,24 @@
+ShoppingListItem:
+  type: object
+  properties:
+    name:
+      type: string
+      example: Chicken breast
+    quantity:
+      type: string
+      example: "300g"
+    category:
+      type: string
+      example: Protein
+
+ShoppingListResponse:
+  type: object
+  properties:
+    shopping_list:
+      type: array
+      items:
+        $ref: '../schemas/shopping-list.yaml#/ShoppingListItem'
+    notes:
+      type: string
+      nullable: true
+      example: "Buy organic eggs if possible"

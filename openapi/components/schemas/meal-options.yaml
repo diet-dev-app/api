@@ -1,0 +1,72 @@
+MealOption:
+  type: object
+  properties:
+    id:
+      type: integer
+      example: 10
+    name:
+      type: string
+      example: Oatmeal with banana
+    description:
+      type: string
+      nullable: true
+      example: A healthy breakfast option
+    estimated_calories:
+      type: number
+      format: float
+      nullable: true
+      example: 320.0
+    meal_time:
+      $ref: '../schemas/meal-times.yaml#/MealTime'
+    ingredients:
+      type: array
+      items:
+        $ref: '../schemas/ingredients.yaml#/Ingredient'
+
+MealOptionCreateRequest:
+  type: object
+  required: [name, meal_time_id]
+  properties:
+    name:
+      type: string
+      example: Oatmeal with banana
+    description:
+      type: string
+      nullable: true
+      example: A healthy breakfast option
+    meal_time_id:
+      type: integer
+      example: 1
+      description: ID of the MealTime (1=breakfast, 2=lunch, 3=snack, 4=dinner)
+    estimated_calories:
+      type: number
+      format: float
+      nullable: true
+      example: 320.0
+    ingredients:
+      type: array
+      items:
+        $ref: '../schemas/ingredients.yaml#/IngredientInput'
+
+MealOptionUpdateRequest:
+  type: object
+  properties:
+    name:
+      type: string
+      example: Oatmeal with strawberries
+    description:
+      type: string
+      nullable: true
+    meal_time_id:
+      type: integer
+      example: 1
+    estimated_calories:
+      type: number
+      format: float
+      nullable: true
+      example: 300.0
+    ingredients:
+      type: array
+      description: Replaces the full ingredient list when provided
+      items:
+        $ref: '../schemas/ingredients.yaml#/IngredientInput'

@@ -24,7 +24,10 @@ services:
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
 
-    # OpenAI Shopping List Service
-    App\Service\OpenAIShoppingListService:
+    # Generic OpenAI HTTP client – used by all AI-powered services
+    App\Service\OpenAIService:
         arguments:
             $openaiApiKey: '%env(OPENAI_API_KEY)%'
+
+    # OpenAIShoppingListService autowires OpenAIService automatically (no extra config needed)
+    # MealOptionImportService autowires OpenAIService and EntityManagerInterface automatically

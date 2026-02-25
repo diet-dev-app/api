@@ -1,0 +1,37 @@
+RegisterRequest:
+  type: object
+  required: [email, password]
+  properties:
+    email:
+      type: string
+      format: email
+      example: user@example.com
+    password:
+      type: string
+      format: password
+      minLength: 6
+      example: secret123
+    name:
+      type: string
+      example: Carlos
+
+LoginRequest:
+  type: object
+  required: [email, password]
+  properties:
+    email:
+      type: string
+      format: email
+      example: user@example.com
+    password:
+      type: string
+      format: password
+      example: secret123
+
+LoginResponse:
+  type: object
+  properties:
+    token:
+      type: string
+      description: JWT access token (valid for 1 hour by default)
+      example: eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...

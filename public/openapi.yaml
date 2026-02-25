@@ -1,0 +1,1742 @@
+openapi: 3.0.3
+info:
+  title: Diet API
+  description: |
+    REST API for the Diet management application.
+
+    ## Authentication
+    Most endpoints require a **JWT Bearer token**.
+    1. Register a user via `POST /api/register`
+    2. Obtain a token via `POST /api/login`
+    3. Pass the token in every protected request as:
+       ```
+       Authorization: Bearer <token>
+       ```
+
+    ## Base URL
+    `http://localhost` (or your deployed domain)
+
+  version: "1.0.0"
+  contact:
+    name: Diet Dev Team
+
+servers:
+  - url: http://localhost
+    description: Local Docker environment
+
+tags:
+  - name: Auth
+    description: Registration & login
+  - name: User
+    description: Authenticated user profile
+  - name: Meals
+    description: Daily meal plans for the current user
+  - name: Meal Options
+    description: Catalogue of reusable meal option templates (with ingredients)
+  - name: Shopping List
+    description: AI-generated shopping list based on planned meals
+  - name: File Import
+    description: Import meal options from nutritionist diet documents via AI
+  - name: Caloric Goals
+    description: Per-user daily caloric targets with date-range periods
+  - name: Meal Generation
+    description: AI-powered daily meal plan generation from existing meal options
+  - name: Reports
+    description: AI-generated weekly nutritional analysis and history
+
+# ---------------------------------------------------------------------------
+# Security scheme
+# ---------------------------------------------------------------------------
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  # ---------------------------------------------------------------------------
+  # Reusable schemas
+  # ---------------------------------------------------------------------------
+  schemas:
+
+    # ── Auth ─────────────────────────────────────────────────────────────────
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          minLength: 6
+          example: secret123
+        name:
+          type: string
+          example: Carlos
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          example: secret123
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT access token (valid for 1 hour by default)
+          example: eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...
+
+    # ── User ─────────────────────────────────────────────────────────────────
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          example: user@example.com
+        name:
+          type: string
+          nullable: true
+          example: Carlos
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-02-15T10:00:00+00:00"
+        isActive:
+          type: boolean
+          example: true
+        roles:
+          type: array
+          items:
+            type: string
+          example: ["ROLE_USER"]
+
+    # ── Ingredients ──────────────────────────────────────────────────────────
+    Ingredient:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 42
+        name:
+          type: string
+          example: Chicken breast
+        quantity:
+          type: number
+          format: float
+          example: 150.0
+        unit:
+          type: string
+          example: g
+
+    IngredientInput:
+      type: object
+      required: [name, quantity, unit]
+      properties:
+        name:
+          type: string
+          example: Chicken breast
+        quantity:
+          type: number
+          format: float
+          example: 150.0
+        unit:
+          type: string
+          example: g
+
+    # ── MealTime ─────────────────────────────────────────────────────────────
+    MealTime:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: breakfast
+        label:
+          type: string
+          example: Breakfast
+
+    # ── MealOption ───────────────────────────────────────────────────────────
+    MealOption:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 10
+        name:
+          type: string
+          example: Oatmeal with banana
+        description:
+          type: string
+          nullable: true
+          example: A healthy breakfast option
+        estimated_calories:
+          type: number
+          format: float
+          nullable: true
+          example: 320.0
+        meal_time:
+          $ref: '#/components/schemas/MealTime'
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ingredient'
+
+    MealOptionCreateRequest:
+      type: object
+      required: [name, meal_time_id]
+      properties:
+        name:
+          type: string
+          example: Oatmeal with banana
+        description:
+          type: string
+          nullable: true
+          example: A healthy breakfast option
+        meal_time_id:
+          type: integer
+          example: 1
+          description: ID of the MealTime (1=breakfast, 2=lunch, 3=snack, 4=dinner)
+        estimated_calories:
+          type: number
+          format: float
+          nullable: true
+          example: 320.0
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/IngredientInput'
+
+    MealOptionUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Oatmeal with strawberries
+        description:
+          type: string
+          nullable: true
+        meal_time_id:
+          type: integer
+          example: 1
+        estimated_calories:
+          type: number
+          format: float
+          nullable: true
+          example: 300.0
+        ingredients:
+          type: array
+          description: Replaces the full ingredient list when provided
+          items:
+            $ref: '#/components/schemas/IngredientInput'
+
+    # ── Meals ─────────────────────────────────────────────────────────────────
+    MealTimeWithOptions:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: breakfast
+        label:
+          type: string
+          example: Breakfast
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/MealOptionInMeal'
+
+    MealOptionInMeal:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 10
+        name:
+          type: string
+          example: Oatmeal with banana
+        description:
+          type: string
+          nullable: true
+        estimated_calories:
+          type: number
+          nullable: true
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ingredient'
+
+    Meal:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 5
+        name:
+          type: string
+          example: Monday plan
+        calories:
+          type: integer
+          example: 1800
+        date:
+          type: string
+          format: date-time
+          example: "2026-02-22T00:00:00+00:00"
+        notes:
+          type: string
+          nullable: true
+          example: Cheat day – keep dinner light
+        meal_times:
+          type: array
+          description: Meal options grouped by meal time (breakfast, lunch, snack, dinner)
+          items:
+            $ref: '#/components/schemas/MealTimeWithOptions'
+
+    MealCreateRequest:
+      type: object
+      required: [date]
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2026-02-22"
+        name:
+          type: string
+          example: Monday plan
+        calories:
+          type: integer
+          example: 1800
+        notes:
+          type: string
+          nullable: true
+          example: Cheat day – keep dinner light
+        meal_option_ids:
+          type: array
+          description: IDs of existing MealOptions to attach to this Meal
+          items:
+            type: integer
+          example: [10, 11, 12]
+
+    MealUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Monday plan (updated)
+        calories:
+          type: integer
+          example: 2000
+        date:
+          type: string
+          format: date
+          example: "2026-02-23"
+        notes:
+          type: string
+          nullable: true
+
+    MealSimple:
+      type: object
+      description: Simplified meal response (returned on create / update)
+      properties:
+        id:
+          type: integer
+          example: 5
+        name:
+          type: string
+          example: Monday plan
+        calories:
+          type: integer
+          example: 1800
+        date:
+          type: string
+          format: date-time
+          example: "2026-02-22T00:00:00+00:00"
+        notes:
+          type: string
+          nullable: true
+
+    # ── Shopping list ─────────────────────────────────────────────────────────
+    ShoppingListItem:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Chicken breast
+        quantity:
+          type: string
+          example: "300g"
+        category:
+          type: string
+          example: Protein
+
+    ShoppingListResponse:
+      type: object
+      properties:
+        shopping_list:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShoppingListItem'
+        notes:
+          type: string
+          nullable: true
+          example: "Buy organic eggs if possible"
+
+    # ── File Import ───────────────────────────────────────────────────────────
+    FileImportResponse:
+      type: object
+      description: Result of importing meal options from a nutritionist diet document
+      properties:
+        imported:
+          type: integer
+          description: Number of MealOption records successfully created
+          example: 4
+        meal_options:
+          type: array
+          description: The newly created meal options with estimated calories and inferred ingredients
+          items:
+            $ref: '#/components/schemas/MealOption'
+
+    # ── Caloric Goals ─────────────────────────────────────────────────────────
+    CaloricGoal:
+      type: object
+      description: A user's daily caloric target for a specific date period
+      properties:
+        id:
+          type: integer
+          example: 1
+        daily_calories:
+          type: integer
+          description: Daily caloric target in kcal
+          example: 2000
+        start_date:
+          type: string
+          format: date
+          example: "2026-03-01"
+        end_date:
+          type: string
+          format: date
+          nullable: true
+          description: Null means open-ended (currently active)
+          example: "2026-03-31"
+        label:
+          type: string
+          nullable: true
+          description: "Optional label: cutting, bulking, maintenance, etc."
+          example: cutting
+        notes:
+          type: string
+          nullable: true
+          example: "Reducing intake after holiday season"
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-03-01T10:00:00+00:00"
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    CaloricGoalRequest:
+      type: object
+      required: [daily_calories, start_date]
+      properties:
+        daily_calories:
+          type: integer
+          minimum: 500
+          maximum: 10000
+          example: 2000
+        start_date:
+          type: string
+          format: date
+          example: "2026-03-01"
+        end_date:
+          type: string
+          format: date
+          nullable: true
+          example: "2026-03-31"
+        label:
+          type: string
+          maxLength: 100
+          example: cutting
+        notes:
+          type: string
+          nullable: true
+
+    # ── Meal Generation ───────────────────────────────────────────────────────
+    MealPlanRequest:
+      type: object
+      required: [date]
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2026-03-01"
+        target_calories:
+          type: integer
+          nullable: true
+          description: "Override the user's active caloric goal for this request"
+          example: 2000
+
+    MealPlanResponse:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2026-03-01"
+        target_calories:
+          type: integer
+          example: 2000
+        total_calories:
+          type: integer
+          example: 1950
+        difference:
+          type: integer
+          description: total_calories minus target_calories
+          example: -50
+        meals:
+          type: array
+          items:
+            type: object
+            properties:
+              meal_time:
+                type: string
+                example: breakfast
+              meal_option_id:
+                type: integer
+                example: 5
+              meal_option_name:
+                type: string
+                example: "Greek yogurt with granola"
+              estimated_calories:
+                type: number
+                example: 320
+              reason:
+                type: string
+                example: "High protein breakfast within calorie budget"
+        notes:
+          type: string
+          nullable: true
+          example: "Well-balanced plan. Consider adding a small snack."
+        saved_meal:
+          type: object
+          nullable: true
+          description: Present only when ?save=true is passed
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            date:
+              type: string
+              format: date
+
+    # ── Weekly Reports ────────────────────────────────────────────────────────
+    WeeklyReport:
+      type: object
+      properties:
+        id:
+          type: integer
+        week_start:
+          type: string
+          format: date
+          example: "2026-02-17"
+        week_end:
+          type: string
+          format: date
+          example: "2026-02-23"
+        target_calories:
+          type: integer
+          example: 2000
+        average_calories:
+          type: integer
+          example: 1850
+        total_calories:
+          type: integer
+          example: 12950
+        days_tracked:
+          type: integer
+          example: 6
+        goal_adherence:
+          type: object
+          properties:
+            score:
+              type: integer
+              description: Adherence score 0-100
+              example: 78
+            days_on_target:
+              type: integer
+              example: 4
+            days_over:
+              type: integer
+              example: 1
+            days_under:
+              type: integer
+              example: 1
+            days_not_tracked:
+              type: integer
+              example: 1
+        calorie_analysis:
+          type: object
+          properties:
+            daily_breakdown:
+              type: array
+              items:
+                type: object
+            weekly_total:
+              type: integer
+            weekly_target:
+              type: integer
+            weekly_difference:
+              type: integer
+            average_daily:
+              type: integer
+        nutritional_gaps:
+          type: array
+          items:
+            type: object
+            properties:
+              area:
+                type: string
+              severity:
+                type: string
+                enum: [low, moderate, high]
+              detail:
+                type: string
+        achievements:
+          type: array
+          items:
+            type: string
+        notes_analysis:
+          type: object
+          properties:
+            patterns:
+              type: array
+              items:
+                type: string
+            concerns:
+              type: array
+              items:
+                type: string
+            mood_trend:
+              type: string
+              enum: [positive, neutral, negative, mixed]
+        recommendations:
+          type: array
+          items:
+            type: string
+        summary:
+          type: string
+        generated_at:
+          type: string
+          format: date-time
+
+    WeeklyReportSummary:
+      type: object
+      description: Light version of WeeklyReport used in history list
+      properties:
+        id:
+          type: integer
+        week_start:
+          type: string
+          format: date
+        week_end:
+          type: string
+          format: date
+        score:
+          type: integer
+          nullable: true
+        target_calories:
+          type: integer
+        average_calories:
+          type: integer
+        total_calories:
+          type: integer
+        days_tracked:
+          type: integer
+        summary:
+          type: string
+        generated_at:
+          type: string
+          format: date-time
+
+    # ── Generic ──────────────────────────────────────────────────────────────
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Operation successful
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Unauthorized
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            email: This value is not a valid email address.
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+paths:
+
+  # ── Healthcheck ────────────────────────────────────────────────────────────
+  /:
+    get:
+      tags: [Auth]
+      summary: API health check
+      description: Returns basic status information. No authentication required.
+      operationId: healthCheck
+      responses:
+        '200':
+          description: API is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: API Diet is running
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  # ── Auth ───────────────────────────────────────────────────────────────────
+  /api/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      description: Creates a new user account. No authentication required.
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                message: User registered successfully
+        '400':
+          description: Missing fields or validation error
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - $ref: '#/components/schemas/ValidationErrorResponse'
+
+  /api/login:
+    post:
+      tags: [Auth]
+      summary: Login and obtain JWT token
+      description: |
+        Authenticates the user with email/password and returns a signed JWT token.
+        The token must be included in the `Authorization: Bearer <token>` header
+        for all protected endpoints.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Invalid credentials.
+
+  # ── User ───────────────────────────────────────────────────────────────────
+  /api/user:
+    get:
+      tags: [User]
+      summary: Get current user profile
+      description: Returns the profile of the currently authenticated user.
+      operationId: getUserProfile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Meals ──────────────────────────────────────────────────────────────────
+  /api/meals:
+    get:
+      tags: [Meals]
+      summary: List user's meals
+      description: |
+        Returns all meals belonging to the authenticated user.
+        Each meal includes its associated meal options grouped by meal time
+        (breakfast, lunch, snack, dinner), with their ingredient lists.
+      operationId: listMeals
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of meals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Meal'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [Meals]
+      summary: Create a new meal
+      description: |
+        Creates a meal day entry for the authenticated user.
+        You can optionally attach existing `MealOption` IDs.
+      operationId: createMeal
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MealCreateRequest'
+            example:
+              date: "2026-02-22"
+              name: Monday plan
+              calories: 1800
+              notes: Light dinner
+              meal_option_ids: [10, 11]
+      responses:
+        '201':
+          description: Meal created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MealSimple'
+        '400':
+          description: Missing required field or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/meals/{id}:
+    put:
+      tags: [Meals]
+      summary: Update a meal
+      description: Updates the editable fields of a meal belonging to the authenticated user.
+      operationId: updateMeal
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 5
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MealUpdateRequest'
+      responses:
+        '200':
+          description: Meal updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MealSimple'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Meal not found or does not belong to user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Meals]
+      summary: Delete a meal
+      description: Permanently deletes a meal belonging to the authenticated user.
+      operationId: deleteMeal
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 5
+      responses:
+        '200':
+          description: Meal deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                message: Meal deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Meal not found or does not belong to user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Meal Options ───────────────────────────────────────────────────────────
+  /api/meal-options:
+    get:
+      tags: [Meal Options]
+      summary: List all meal options
+      description: |
+        Returns the full catalogue of meal options (templates).
+        Each option includes its associated meal time and ingredient list.
+        Requires authentication.
+      operationId: listMealOptions
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of meal options
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MealOption'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [Meal Options]
+      summary: Create a meal option
+      description: |
+        Creates a new meal option template with associated ingredients.
+        `meal_time_id` references a MealTime record (e.g. 1=Breakfast, 2=Lunch, 3=Snack, 4=Dinner).
+      operationId: createMealOption
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MealOptionCreateRequest'
+            example:
+              name: Oatmeal with banana
+              description: High-fibre breakfast
+              meal_time_id: 1
+              estimated_calories: 320
+              ingredients:
+                - name: Rolled oats
+                  quantity: 80
+                  unit: g
+                - name: Banana
+                  quantity: 1
+                  unit: unit
+                - name: Almond milk
+                  quantity: 200
+                  unit: ml
+      responses:
+        '201':
+          description: Meal option created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MealOption'
+        '400':
+          description: Missing required field or invalid ingredient data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: MealTime not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/meal-options/{id}:
+    put:
+      tags: [Meal Options]
+      summary: Update a meal option
+      description: |
+        Updates an existing meal option. All fields are optional.
+        When `ingredients` is provided, it **replaces** the full ingredient list.
+      operationId: updateMealOption
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 10
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MealOptionUpdateRequest'
+      responses:
+        '200':
+          description: Meal option updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MealOption'
+        '400':
+          description: Invalid ingredient data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: MealOption or MealTime not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Meal Options]
+      summary: Delete a meal option
+      description: Permanently deletes a meal option and its ingredients.
+      operationId: deleteMealOption
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 10
+      responses:
+        '200':
+          description: Meal option deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                message: MealOption deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: MealOption not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── File Import ───────────────────────────────────────────────────────────
+  /api/meal-options/import:
+    post:
+      tags: [File Import]
+      summary: Import meal options from a nutritionist diet document
+      description: |
+        Upload a PDF, DOCX, or Markdown file containing a diet plan written by
+        a nutritionist.
+
+        The system will:
+        1. Extract plain text from the document.
+        2. Send it to **OpenAI** to identify every distinct meal option.
+        3. Let OpenAI **estimate the calories** for each meal (nutritionist
+           documents rarely include calorie counts).
+        4. Let OpenAI **infer the full ingredient list** with realistic
+           quantities for each meal (nutritionist documents typically only name
+           the dish, not the recipe).
+        5. Persist the resulting `MealOption` and `Ingredient` records and
+           return them in the response.
+
+        **Supported formats:** PDF, DOCX, Markdown (`.md`), plain text  
+        **Maximum file size:** 5 MB
+      operationId: importMealOptionsFromFile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: |
+                    Nutritionist diet document. Accepted formats: .pdf, .docx, .md, .txt
+                    Maximum size: 5 MB
+      responses:
+        '201':
+          description: Meal options imported and created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileImportResponse'
+              example:
+                imported: 3
+                meal_options:
+                  - id: 42
+                    name: "Oatmeal with banana and honey"
+                    description: "Breakfast option recommended by nutritionist"
+                    estimated_calories: 380
+                    meal_time:
+                      id: 1
+                      name: breakfast
+                      label: Breakfast
+                    ingredients:
+                      - id: 101
+                        name: Rolled oats
+                        quantity: 80
+                        unit: g
+                      - id: 102
+                        name: Banana
+                        quantity: 1
+                        unit: unit
+                      - id: 103
+                        name: Honey
+                        quantity: 1
+                        unit: tbsp
+        '400':
+          description: |
+            Invalid request. Possible causes:
+            - No file uploaded
+            - Unsupported file type
+            - File contains no readable text
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Unsupported file type \"application/zip\". Allowed: PDF, DOCX, Markdown, plain text."
+        '401':
+          description: Unauthorized – missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: File exceeds the 5 MB size limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "File exceeds the maximum allowed size of 5 MB."
+        '422':
+          description: |
+            OpenAI could not extract valid meal data from the document.
+            The file was readable but the AI could not identify meal options.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "OpenAI could not extract meal options: Could not parse JSON from OpenAI response"
+        '500':
+          description: OpenAI API failure or unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Shopping List ──────────────────────────────────────────────────────────
+  /api/shopping-list:
+    get:
+      tags: [Shopping List]
+      summary: Generate AI shopping list
+      description: |
+        Uses OpenAI to generate a consolidated shopping list based on all meals
+        the authenticated user has planned within the given date range.
+
+        The AI analyses every meal option's ingredients and returns a cleaned,
+        categorised shopping list with consolidated quantities.
+
+        **Date format:** `YYYY-MM-DD`
+      operationId: getShoppingList
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: start
+          in: query
+          required: true
+          description: Start date (inclusive) of the date range
+          schema:
+            type: string
+            format: date
+          example: "2026-02-17"
+        - name: end
+          in: query
+          required: true
+          description: End date (inclusive) of the date range
+          schema:
+            type: string
+            format: date
+          example: "2026-02-23"
+      responses:
+        '200':
+          description: AI-generated shopping list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShoppingListResponse'
+              example:
+                shopping_list:
+                  - name: Chicken breast
+                    quantity: "600g"
+                    category: Protein
+                  - name: Rolled oats
+                    quantity: "400g"
+                    category: Grains
+                  - name: Banana
+                    quantity: "5 units"
+                    category: Fruit
+                notes: "Consider buying organic eggs."
+        '400':
+          description: Missing start or end date
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Missing start or end date
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No meals found for the given date range
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: No meals found for this range
+
+# ---------------------------------------------------------------------------
+# Caloric Goals
+# ---------------------------------------------------------------------------
+  /api/caloric-goals:
+    get:
+      tags: [Caloric Goals]
+      summary: List all caloric goals
+      description: Returns all caloric goals for the authenticated user ordered by start date descending.
+      operationId: listCaloricGoals
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of caloric goals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CaloricGoal'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [Caloric Goals]
+      summary: Create a new caloric goal
+      description: |
+        Creates a caloric goal for a specific date range. Date ranges must not
+        overlap with existing goals for the same user. Setting end_date to null
+        creates an open-ended (ongoing) goal.
+      operationId: createCaloricGoal
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CaloricGoalRequest'
+            example:
+              daily_calories: 2000
+              start_date: "2026-03-01"
+              end_date: "2026-03-31"
+              label: cutting
+              notes: "Reducing intake after holiday season"
+      responses:
+        '201':
+          description: Caloric goal created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaloricGoal'
+        '400':
+          description: Missing required fields or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Date range overlaps with an existing goal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: The date range overlaps with an existing caloric goal.
+
+  /api/caloric-goals/active:
+    get:
+      tags: [Caloric Goals]
+      summary: Get the currently active caloric goal
+      description: Returns the caloric goal that covers today (or a specific date via ?date=).
+      operationId: getActiveCaloricGoal
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Check which goal is active on this specific date (default: today)
+      responses:
+        '200':
+          description: Active caloric goal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaloricGoal'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No active caloric goal found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/caloric-goals/{id}:
+    get:
+      tags: [Caloric Goals]
+      summary: Get a caloric goal by ID
+      operationId: getCaloricGoal
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Caloric goal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaloricGoal'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Goal not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags: [Caloric Goals]
+      summary: Update a caloric goal
+      description: Partially or fully update a caloric goal. Date range changes are validated for overlaps.
+      operationId: updateCaloricGoal
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CaloricGoalRequest'
+      responses:
+        '200':
+          description: Caloric goal updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaloricGoal'
+        '400':
+          description: Invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Goal not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Updated date range overlaps with another goal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Caloric Goals]
+      summary: Delete a caloric goal
+      operationId: deleteCaloricGoal
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Caloric goal deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                message: Caloric goal deleted successfully.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Goal not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+# ---------------------------------------------------------------------------
+# Meal Generation
+# ---------------------------------------------------------------------------
+  /api/meals/generate:
+    post:
+      tags: [Meal Generation]
+      summary: Generate an AI meal plan for a specific date
+      description: |
+        Asks OpenAI to select the best combination of existing **MealOption**
+        records to meet the user's daily caloric goal (or a custom override).
+
+        Only uses meal options already stored in the database — no new options
+        are invented.
+
+        Add **?save=true** to automatically persist the generated plan as a
+        `Meal` entity with the selected MealOptions linked.
+      operationId: generateMealPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: save
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: When true, persist the generated plan as a Meal entity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MealPlanRequest'
+            example:
+              date: "2026-03-01"
+              target_calories: 2000
+      responses:
+        '201':
+          description: Meal plan generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MealPlanResponse'
+        '400':
+          description: Missing date or invalid format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No active caloric goal and no target_calories provided, or no meal options available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: OpenAI could not generate a valid meal plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: OpenAI API failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+# ---------------------------------------------------------------------------
+# Weekly Reports
+# ---------------------------------------------------------------------------
+  /api/reports/weekly:
+    get:
+      tags: [Reports]
+      summary: Get or generate a weekly nutritional analysis
+      description: |
+        Returns an AI-generated nutritional analysis for the requested week,
+        including:
+        - Caloric goal adherence score (0-100)
+        - Day-by-day calorie breakdown vs. target
+        - Nutritional gaps (protein, vegetables, etc.)
+        - Achievements and motivational notes
+        - Analysis of the user's personal meal notes (mood, energy, symptoms)
+        - Actionable recommendations for the following week
+
+        Reports are **cached** per user per week. Add **?regenerate=true** to
+        force a fresh OpenAI call.
+      operationId: getWeeklyReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: week_start
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: "Monday of the desired week (Y-m-d). Defaults to the current week's Monday."
+        - name: regenerate
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: Force re-generation even if a cached report exists
+      responses:
+        '200':
+          description: Weekly nutritional analysis report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeeklyReport'
+        '400':
+          description: Invalid week_start format (must be a Monday in Y-m-d)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No caloric goal found for the requested week, or no meals to analyse
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: OpenAI could not generate a valid analysis
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: OpenAI API failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/reports/weekly/history:
+    get:
+      tags: [Reports]
+      summary: List recent weekly reports
+      description: Returns a lightweight list of past weekly reports (no full analysis payload).
+      operationId: listWeeklyReportHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 52
+            default: 8
+          description: Maximum number of reports to return
+      responses:
+        '200':
+          description: List of recent weekly reports (summaries)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WeeklyReportSummary'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
