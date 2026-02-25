@@ -6,6 +6,8 @@ This project is a small web application designed to help users manage their diet
 
 ## Development Guidelines
 
+- **Use Hyper-mcp:**
+  - siempre que sea necesario busca context, documentacion y resuleve duda utilizando hyper-mcp con context7 y google search
 - **Architecture:**
   - Use Object-Oriented Programming (OOP) principles.
   - Follow the Model-View-Controller (MVC) pattern for code organization.

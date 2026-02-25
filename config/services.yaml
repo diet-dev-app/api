@@ -29,5 +29,21 @@ services:
         arguments:
             $openaiApiKey: '%env(OPENAI_API_KEY)%'
 
-    # OpenAIShoppingListService autowires OpenAIService automatically (no extra config needed)
-    # MealOptionImportService autowires OpenAIService and EntityManagerInterface automatically
+    # OpenRouter AI provider – drop-in replacement for OpenAIService.
+    # Uses the OpenRouter Responses API (https://openrouter.ai/api/v1/responses).
+    App\Service\OpenRouterService:
+        arguments:
+            $openRouterApiKey: '%env(OPENROUTER_API_KEY)%'
+
+    # -----------------------------------------------------------------------
+    # Active AI provider
+    # Switch the alias below to choose which provider is injected everywhere
+    # AiServiceInterface is type-hinted.
+    #
+    #   OpenAI:      App\Service\OpenAIService
+    #   OpenRouter:  App\Service\OpenRouterService
+    # -----------------------------------------------------------------------
+    App\Service\AI\AiServiceInterface: '@App\Service\OpenAIService'
+
+    # OpenAIShoppingListService autowires AiServiceInterface automatically (no extra config needed)
+    # MealOptionImportService autowires AiServiceInterface and EntityManagerInterface automatically

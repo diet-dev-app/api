@@ -7,6 +7,7 @@ use App\Entity\User;
 use App\Entity\WeeklyReport;
 use App\Repository\MealRepository;
 use App\Repository\WeeklyReportRepository;
+use App\Service\AI\AiServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
@@ -19,7 +20,7 @@ use Doctrine\ORM\EntityManagerInterface;
 class WeeklyAnalysisService
 {
     public function __construct(
-        private readonly OpenAIService $openAI,
+        private readonly AiServiceInterface $openAI,
         private readonly EntityManagerInterface $em,
         private readonly CaloricGoalService $caloricGoalService,
         private readonly MealRepository $mealRepository,

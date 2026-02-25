@@ -3,13 +3,15 @@
 
 namespace App\Service;
 
+use App\Service\AI\AiServiceInterface;
+
 /**
  * Shopping-list-specific service.
- * Delegates all OpenAI communication to the generic OpenAIService.
+ * Delegates all AI communication to the injected AiServiceInterface provider.
  */
 class OpenAIShoppingListService
 {
-    public function __construct(private readonly OpenAIService $openAI) {}
+    public function __construct(private readonly AiServiceInterface $openAI) {}
 
     /**
      * Generate a shopping list from meal data using OpenAI.

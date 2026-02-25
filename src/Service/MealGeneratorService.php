@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Entity\MealOption;
 use App\Entity\User;
+use App\Service\AI\AiServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
@@ -16,7 +17,7 @@ use Doctrine\ORM\EntityManagerInterface;
 class MealGeneratorService
 {
     public function __construct(
-        private readonly OpenAIService $openAI,
+        private readonly AiServiceInterface $openAI,
         private readonly EntityManagerInterface $em,
         private readonly CaloricGoalService $caloricGoalService,
     ) {}

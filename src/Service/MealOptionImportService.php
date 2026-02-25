@@ -6,7 +6,9 @@ namespace App\Service;
 use App\Entity\Ingredient;
 use App\Entity\MealOption;
 use App\Entity\MealTime;
+use App\Service\AI\AiServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * Analyses nutritionist diet documents via OpenAI and persists the extracted
@@ -72,8 +74,9 @@ Rules:
 PROMPT;
 
     public function __construct(
-        private readonly OpenAIService $openAI,
+        private readonly AiServiceInterface $openAI,
         private readonly EntityManagerInterface $em,
+        private readonly LoggerInterface $logger,
     ) {}
 
     /**
@@ -87,22 +90,39 @@ PROMPT;
      */
     public function importFromText(string $dietText): array
     {
+        $this->logger->info('MealOptionImport: starting AI extraction', [
+            'text_length'  => strlen($dietText),
+            'text_preview' => substr($dietText, 0, 300),
+        ]);
+
         $aiResponse = $this->openAI->chatJson(
             self::SYSTEM_PROMPT,
             "Nutritionist diet document:\n\n" . $dietText,
         );
 
         if (isset($aiResponse['error'])) {
+            $this->logger->error('MealOptionImport: AI returned error', [
+                'error' => $aiResponse['error'],
+                'raw'   => $aiResponse['raw'] ?? null,
+            ]);
             throw new \RuntimeException(
                 'OpenAI could not extract meal options: ' . $aiResponse['error']
             );
         }
 
         if (empty($aiResponse['meal_options']) || !is_array($aiResponse['meal_options'])) {
+            $this->logger->error('MealOptionImport: AI response missing meal_options', [
+                'ai_response_keys' => array_keys($aiResponse),
+                'ai_response'      => $aiResponse,
+            ]);
             throw new \RuntimeException(
                 'OpenAI response does not contain a valid "meal_options" array.'
             );
         }
+
+        $this->logger->info('MealOptionImport: AI returned meal options', [
+            'count' => count($aiResponse['meal_options']),
+        ]);
 
         $created = [];
 
@@ -110,10 +130,18 @@ PROMPT;
             $option = $this->createMealOption($item);
             if ($option !== null) {
                 $created[] = $option;
+                $this->logger->debug('MealOptionImport: persisted meal option', [
+                    'name'      => $option->getName(),
+                    'meal_time' => $option->getMealTime()?->getName(),
+                ]);
             }
         }
 
         $this->em->flush();
+
+        $this->logger->info('MealOptionImport: import complete', [
+            'imported' => count($created),
+        ]);
 
         return [
             'imported'     => count($created),
